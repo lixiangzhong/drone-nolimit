@@ -1,23 +1,21 @@
-FROM golang:1.22.1-alpine as build
+FROM golang:1.23.1-alpine AS build
 
-ENV DRONE_VERSION=2.22.0
+ENV DRONE_VERSION=2.24.0
 ENV GOPROXY=https://goproxy.cn,direct
 RUN sed -i 's/dl-cdn.alpinelinux.org/mirrors.ustc.edu.cn/g' /etc/apk/repositories && apk update
 RUN apk add -U --no-cache ca-certificates git build-base
 RUN mkdir -p /src/drone && \
     cd /src/drone && \
-    git clone https://mirror.ghproxy.com/https://github.com/harness/gitness.git . && \
+    git clone https://github.com/harness/gitness.git . && \
     git checkout drone && \
     git checkout -b v${DRONE_VERSION} && \
     go get github.com/mattn/go-sqlite3
 RUN cd /src/drone/cmd/drone-server && go build -tags "nolimit" -ldflags "-extldflags \"-static\"" -o drone-server
 
-FROM alpine:3.7
+FROM alpine:3
 
 EXPOSE 80 443
 VOLUME /data
-
-RUN [ ! -e /etc/nsswitch.conf ] && echo 'hosts: files dns' > /etc/nsswitch.conf
 
 ENV GODEBUG netdns=go
 ENV XDG_CACHE_HOME /data
